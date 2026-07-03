@@ -5,132 +5,295 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>a.EYE Leaderboard</title>
 <style>
-  :root{--bg:#0a0a0d;--surface:#141417;--stroke:rgba(255,255,255,.08);
-    --text:#f2f2f5;--dim:#8a8a92;--teal:#1ad9c9;--blue:#3f8cff;--warn:#ffb833}
+  :root{
+    --bg:#0a0a0d; --surface:#141417; --surface2:#1b1b1f; --stroke:rgba(255,255,255,.08);
+    --text:#f2f2f5; --dim:#8a8a92; --dim2:#5f5f66;
+    --teal:#1ad9c9; --blue:#3f8cff; --warn:#ffb833; --crit:#ff5c5c;
+  }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);
-    font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-  .wrap{max-width:1000px;margin:0 auto;padding:32px 20px}
-  h1{font-size:26px;margin:0 0 2px} .sub{color:var(--dim);margin:0 0 20px}
-  .eye{color:var(--teal)}
-  .controls{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
-  input,select{background:var(--surface);border:1px solid var(--stroke);color:var(--text);
-    border-radius:10px;padding:9px 12px;font-size:13px}
-  input{flex:1;min-width:180px}
-  label.chk{color:var(--dim);font-size:12px;display:inline-flex;align-items:center;gap:4px}
-  label.chk input{width:auto;min-width:0}
-  table{width:100%;border-collapse:collapse}
-  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--stroke)}
-  th{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.06em;
-    cursor:pointer;user-select:none}
-  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
-  td.mid,th.mid{text-align:center}
-  .rank{color:var(--dim)} .top .rank{color:var(--teal);font-weight:700}
-  .rt{font-size:10px;font-weight:700} .rt.MLX{color:var(--teal)} .rt.GGUF{color:var(--blue)}
-  .q{font-weight:600} .qkj{color:var(--teal);font-weight:600}
-  .badge{font-size:10px;color:var(--warn);border:1px solid var(--warn);border-radius:6px;padding:0 5px;margin-left:6px}
-  .tier{font-size:10px;font-weight:700;border-radius:6px;padding:0 5px;margin-left:6px;text-transform:uppercase;letter-spacing:.03em}
-  .tier.official{color:var(--teal);border:1px solid var(--teal)}
-  .tier.community{color:var(--dim);border:1px solid var(--stroke)}
-  .cond{font-weight:700;cursor:default}
-  .cond.clean{color:var(--teal)} .cond.warn{color:var(--warn)} .cond.unknown{color:var(--dim)}
-  .empty{color:var(--dim);padding:40px 0;text-align:center}
-  .note{color:var(--dim);font-size:11px;margin-top:14px}
+  html{color-scheme:dark}
+  body{margin:0;background:
+      radial-gradient(1200px 500px at 80% -10%, rgba(63,140,255,.10), transparent 60%),
+      radial-gradient(900px 400px at 0% 0%, rgba(26,217,201,.08), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1120px;margin:0 auto;padding:36px 22px 60px}
+
+  header{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+  .eye{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--teal),var(--blue));color:#04121a;font-weight:900;font-size:16px}
+  h1{font-size:26px;margin:0;font-weight:800;letter-spacing:-.02em}
+  h1 .brand{background:linear-gradient(135deg,var(--teal),var(--blue));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--dim);margin:2px 0 22px;font-size:13px}
+
+  .stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+  .stat{background:var(--surface);border:1px solid var(--stroke);border-radius:14px;padding:12px 16px;min-width:120px}
+  .stat .k{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
+  .stat .v{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:2px}
+  .stat .v.teal{color:var(--teal)}
+
+  .panel{background:var(--surface);border:1px solid var(--stroke);border-radius:16px;padding:16px;margin-bottom:16px}
+
+  .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  input,select{background:var(--surface2);border:1px solid var(--stroke);color:var(--text);
+    border-radius:10px;padding:9px 12px;font-size:13px;outline:none}
+  input:focus,select:focus{border-color:var(--blue)}
+  input.search{flex:1;min-width:200px}
+  .seg{display:inline-flex;background:var(--surface2);border:1px solid var(--stroke);border-radius:10px;overflow:hidden}
+  .seg button{background:transparent;border:0;color:var(--dim);padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer}
+  .seg button.on{background:rgba(63,140,255,.18);color:var(--text)}
+  label.chk{color:var(--dim);font-size:12px;display:inline-flex;align-items:center;gap:5px;cursor:pointer;user-select:none}
+  label.chk input{accent-color:var(--teal)}
+
+  /* Chart */
+  .chartwrap{margin-top:14px}
+  .chart-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+  .chart-title{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
+  svg{width:100%;height:260px;display:block}
+  .ax{stroke:var(--stroke)} .axlbl{fill:var(--dim2);font-size:10px}
+  .dot{cursor:pointer;transition:r .1s} .dot:hover{r:7}
+
+  table{width:100%;border-collapse:collapse;margin-top:4px}
+  th,td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--stroke);white-space:nowrap}
+  th{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.05em;cursor:pointer;user-select:none;position:sticky;top:0;background:var(--surface)}
+  th.num,td.num{text-align:right;font-variant-numeric:tabular-nums}
+  th.mid,td.mid{text-align:center}
+  th .arrow{color:var(--teal);font-size:10px}
+  tr:hover td{background:rgba(255,255,255,.02)}
+  .rank{color:var(--dim);font-variant-numeric:tabular-nums}
+  tr.top .rank{color:var(--teal);font-weight:800}
+  .model{font-weight:600}
+  .chips{display:inline-flex;gap:5px;margin-left:8px;vertical-align:middle}
+  .tag{font-size:10px;font-weight:700;border-radius:6px;padding:1px 6px;letter-spacing:.02em}
+  .tag.MLX{color:var(--teal);border:1px solid rgba(26,217,201,.5)}
+  .tag.GGUF{color:var(--blue);border:1px solid rgba(63,140,255,.5)}
+  .tag.official{color:var(--teal);background:rgba(26,217,201,.12)}
+  .tag.community{color:var(--dim);border:1px solid var(--stroke)}
+  .tag.unverified{color:var(--warn);border:1px solid rgba(255,184,51,.5)}
+  .qkj{color:var(--teal);font-weight:700}
+  .cond{font-weight:800;cursor:default}
+  .cond.clean{color:var(--teal)} .cond.warn{color:var(--warn)} .cond.unknown{color:var(--dim2)}
+  .empty{color:var(--dim);padding:48px 0;text-align:center}
+  .legend{color:var(--dim);font-size:11px;margin-top:16px;line-height:1.7}
+  .legend b{color:var(--text)}
+  a{color:var(--blue);text-decoration:none} a:hover{text-decoration:underline}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1><span class="eye">a.EYE</span> Leaderboard</h1>
-  <p class="sub">Local models ranked by on-device efficiency — quality per kilojoule.</p>
-  <div class="controls">
-    <input id="q" placeholder="Filter by model or chip…" />
-    <select id="sort">
-      <option value="qualityPerKilojoule">Quality / kJ</option>
-      <option value="quality">Quality</option>
-      <option value="tokensPerSecond">Speed (tok/s)</option>
-    </select>
-    <label class="chk"><input type="checkbox" id="official"> official only</label>
-    <label class="chk"><input type="checkbox" id="clean"> clean runs only</label>
-    <label class="chk"><input type="checkbox" id="verified"> verified only</label>
+  <header>
+    <div class="eye">◉</div>
+    <h1><span class="brand">a.EYE</span> Leaderboard</h1>
+  </header>
+  <p class="sub">Local LLMs on Apple Silicon, ranked by on-device efficiency — quality per kilojoule of energy.</p>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="panel">
+    <div class="controls">
+      <input class="search" id="q" placeholder="Search model or chip…" />
+      <select id="sort">
+        <option value="qualityPerKilojoule">Sort: Quality / kJ</option>
+        <option value="quality">Sort: Quality</option>
+        <option value="tokensPerSecond">Sort: Speed (tok/s)</option>
+        <option value="energyJoules">Sort: Energy (J) ↑</option>
+        <option value="memoryGB">Sort: RAM</option>
+        <option value="date">Sort: Newest</option>
+      </select>
+      <div class="seg" id="runtime">
+        <button data-v="all" class="on">All</button>
+        <button data-v="MLX">MLX</button>
+        <button data-v="GGUF">GGUF</button>
+      </div>
+      <div class="seg" id="tier">
+        <button data-v="all" class="on">All tiers</button>
+        <button data-v="official">Official</button>
+        <button data-v="community">Community</button>
+      </div>
+      <label class="chk"><input type="checkbox" id="clean"> Clean runs</label>
+      <label class="chk"><input type="checkbox" id="verified"> Verified</label>
+    </div>
+    <div class="chartwrap">
+      <div class="chart-head">
+        <span class="chart-title">Efficiency map — speed vs. quality-per-kJ</span>
+        <label class="chk"><input type="checkbox" id="showChart" checked> show chart</label>
+      </div>
+      <svg id="chart" viewBox="0 0 1000 260" preserveAspectRatio="none"></svg>
+    </div>
   </div>
-  <table>
-    <thead><tr>
-      <th class="num">#</th><th>Model</th><th>Chip</th>
-      <th class="mid" title="Run conditions">Cond.</th>
-      <th class="num">Quality</th><th class="num">tok/s</th><th class="num">Q/kJ</th>
-    </tr></thead>
-    <tbody id="rows"></tbody>
-  </table>
-  <div id="empty" class="empty" hidden>No results yet.</div>
-  <p class="note">
+
+  <div class="panel" style="padding:0;overflow:hidden">
+    <table>
+      <thead><tr id="head"></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div id="empty" class="empty" hidden>No results yet — be the first to submit from a.EYE.</div>
+  </div>
+
+  <p class="legend">
     <b>Tier</b> — <span style="color:var(--teal)">official</span> = graded by the Claude control judge;
     <span style="color:var(--dim)">community</span> = graded by the pinned on-device judge.
-    <b>Cond.</b> — ✓ measured under clean conditions; ⚠ possibly influenced by background load,
-    thermal throttling, Low Power Mode, or running on battery (hover for details).
+    <b>Cond.</b> — ✓ clean run; ⚠ possibly influenced by background load, throttling, Low Power Mode or battery (hover for why).
+    <b>Q/kJ</b> — answer quality per kilojoule of compute energy (higher = more efficient). Entries are self-reported and
+    auto-ingested as unverified pending maintainer review.
   </p>
 </div>
-<script>
-let data = [];
-const rowsEl = document.getElementById("rows");
-const emptyEl = document.getElementById("empty");
-const qEl = document.getElementById("q");
-const sortEl = document.getElementById("sort");
-const officialEl = document.getElementById("official");
-const cleanEl = document.getElementById("clean");
-const verifiedEl = document.getElementById("verified");
 
-function esc(s){return String(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+<script>
+const COLS = [
+  {k:"rank",  label:"#",       cls:"num",  sortable:false},
+  {k:"model", label:"Model",   cls:"",     sortable:true},
+  {k:"chip",  label:"Chip",    cls:"",     sortable:true},
+  {k:"memoryGB", label:"RAM",  cls:"num",  sortable:true, fmt:v=>v?`${v} GB`:"—"},
+  {k:"quality", label:"Quality", cls:"num", sortable:true, fmt:v=>v??"—"},
+  {k:"tokensPerSecond", label:"tok/s", cls:"num", sortable:true, fmt:v=>(v||0).toFixed(1)},
+  {k:"energyJoules", label:"Energy", cls:"num", sortable:true, fmt:v=>v!=null?`${Math.round(v)} J`:"—"},
+  {k:"qualityPerKilojoule", label:"Q/kJ", cls:"num", sortable:true, fmt:v=>(v||0).toFixed(1), cell:"qkj"},
+  {k:"cond",  label:"Cond.",   cls:"mid",  sortable:false},
+];
+
+let data = [];
+let sortKey = "qualityPerKilojoule", sortDir = -1;
+const state = {q:"", runtime:"all", tier:"all", clean:false, verified:false, chart:true};
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const tierOf = e => e.official===true ? "official" : "community";
 
 function condTitle(e){
-  const bits=[];
-  if(e.lowPowerMode) bits.push("Low Power Mode");
-  if(e.thermalThrottled) bits.push("thermal throttling");
-  if(typeof e.backgroundCPU==="number" && e.backgroundCPU>=0.15)
-    bits.push("~"+Math.round(e.backgroundCPU*100)+"% other-app CPU");
-  return bits.length ? "Influential factors: "+bits.join(", ") : "Run may be influenced";
+  const b=[];
+  if(e.lowPowerMode) b.push("Low Power Mode");
+  if(e.thermalThrottled) b.push("thermal throttling");
+  if(typeof e.backgroundCPU==="number" && e.backgroundCPU>=0.15) b.push(`~${Math.round(e.backgroundCPU*100)}% other-app CPU`);
+  return b.length ? "Influential factors: "+b.join(", ") : "Run may be influenced";
+}
+function condHTML(e){
+  if(e.cleanRun===true) return `<span class="cond clean" title="Measured under clean conditions">✓</span>`;
+  if(e.cleanRun===false) return `<span class="cond warn" title="${esc(condTitle(e))}">⚠</span>`;
+  return `<span class="cond unknown" title="Conditions not reported">–</span>`;
 }
 
-function condCell(e){
-  if(e.cleanRun===true) return '<span class="cond clean" title="Measured under clean conditions">✓</span>';
-  if(e.cleanRun===false) return '<span class="cond warn" title="'+esc(condTitle(e))+'">⚠</span>';
-  return '<span class="cond unknown" title="Conditions not reported">–</span>';
+function filtered(){
+  const q = state.q.trim().toLowerCase();
+  return data.filter(e =>
+    (state.runtime==="all" || e.runtime===state.runtime) &&
+    (state.tier==="all" || tierOf(e)===state.tier) &&
+    (!state.clean || e.cleanRun===true) &&
+    (!state.verified || e.verified===true) &&
+    (!q || (e.model||"").toLowerCase().includes(q) || (e.chip||"").toLowerCase().includes(q))
+  );
+}
+function sortList(list){
+  return [...list].sort((a,b)=>{
+    let av=a[sortKey], bv=b[sortKey];
+    if(sortKey==="date"){ av=Date.parse(a.date||0)||0; bv=Date.parse(b.date||0)||0; }
+    if(typeof av==="string" || typeof bv==="string")
+      return String(av||"").localeCompare(String(bv||"")) * (sortDir<0?-1:1);
+    return ((av||0)-(bv||0)) * (sortDir<0?-1:1);
+  });
 }
 
-function tierChip(e){
-  return e.official===true
-    ? '<span class="tier official">official</span>'
-    : '<span class="tier community">community</span>';
+function renderHead(){
+  $("head").innerHTML = COLS.map(c=>{
+    const arrow = (c.sortable && c.k===sortKey) ? `<span class="arrow">${sortDir<0?"▼":"▲"}</span>` : "";
+    return `<th class="${c.cls}" data-k="${c.k}" ${c.sortable?"":'style="cursor:default"'}>${c.label} ${arrow}</th>`;
+  }).join("");
+  $("head").querySelectorAll("th[data-k]").forEach(th=>{
+    const c = COLS.find(x=>x.k===th.dataset.k);
+    if(!c || !c.sortable) return;
+    th.onclick = ()=>{
+      if(sortKey===c.k) sortDir=-sortDir;
+      else { sortKey=c.k; sortDir = (c.k==="energyJoules") ? 1 : -1; }
+      $("sort").value = ["qualityPerKilojoule","quality","tokensPerSecond","energyJoules","memoryGB","date"].includes(c.k)?c.k:$("sort").value;
+      render();
+    };
+  });
 }
 
 function render(){
-  const q = qEl.value.trim().toLowerCase();
-  const key = sortEl.value;
-  let list = data.filter(e =>
-    (!officialEl.checked || e.official === true) &&
-    (!cleanEl.checked || e.cleanRun === true) &&
-    (!verifiedEl.checked || e.verified === true) &&
-    (!q || (e.model||"").toLowerCase().includes(q) || (e.chip||"").toLowerCase().includes(q)));
-  list.sort((a,b)=>(b[key]||0)-(a[key]||0));
-  rowsEl.innerHTML = "";
+  const list = sortList(filtered());
+  // Stats
+  const chips = new Set(list.map(e=>e.chip).filter(Boolean));
+  const models = new Set(list.map(e=>e.model).filter(Boolean));
+  const bestQkj = list.reduce((m,e)=>Math.max(m,e.qualityPerKilojoule||0),0);
+  $("stats").innerHTML = [
+    ["Entries", list.length],
+    ["Models", models.size],
+    ["Chips", chips.size],
+    ["Best Q/kJ", bestQkj?bestQkj.toFixed(1):"—", true],
+  ].map(([k,v,teal])=>`<div class="stat"><div class="k">${k}</div><div class="v ${teal?'teal':''}">${v}</div></div>`).join("");
+
+  renderHead();
+  drawChart(list);
+
+  const body = $("rows");
+  body.innerHTML = "";
   list.forEach((e,i)=>{
     const tr = document.createElement("tr");
-    if(i<3) tr.className = "top";
-    tr.innerHTML =
-      `<td class="num rank">${i+1}</td>`+
-      `<td>${esc(e.model)} <span class="rt ${esc(e.runtime)}">${esc(e.runtime)}</span>`+
-        `${tierChip(e)}${e.verified?'':'<span class="badge">unverified</span>'}</td>`+
-      `<td>${esc(e.chip)}</td>`+
-      `<td class="mid">${condCell(e)}</td>`+
-      `<td class="num q">${e.quality}</td>`+
-      `<td class="num">${(e.tokensPerSecond||0).toFixed(1)}</td>`+
-      `<td class="num qkj">${(e.qualityPerKilojoule||0).toFixed(1)}</td>`;
-    rowsEl.appendChild(tr);
+    if(i<3 && (sortKey==="qualityPerKilojoule")) tr.className="top";
+    tr.innerHTML = COLS.map(c=>{
+      if(c.k==="rank") return `<td class="num rank">${i+1}</td>`;
+      if(c.k==="model"){
+        const t = tierOf(e);
+        return `<td><span class="model">${esc(e.model)}</span><span class="chips">`+
+          `<span class="tag ${esc(e.runtime)}">${esc(e.runtime)}</span>`+
+          `<span class="tag ${t}">${t}</span>`+
+          `${e.verified?'':'<span class="tag unverified">unverified</span>'}`+
+          `</span></td>`;
+      }
+      if(c.k==="cond") return `<td class="mid">${condHTML(e)}</td>`;
+      const val = c.fmt ? c.fmt(e[c.k]) : esc(e[c.k]);
+      return `<td class="${c.cls}"><span class="${c.cell||''}">${val}</span></td>`;
+    }).join("");
+    body.appendChild(tr);
   });
-  emptyEl.hidden = list.length>0;
+  $("empty").hidden = list.length>0;
 }
-[qEl,sortEl,officialEl,cleanEl,verifiedEl].forEach(el=>el.addEventListener("input",render));
-fetch("leaderboard.json").then(r=>r.json()).then(d=>{data=Array.isArray(d)?d:[];render();})
-  .catch(()=>{emptyEl.hidden=false;emptyEl.textContent="Could not load leaderboard.json";});
+
+function drawChart(list){
+  const svg = $("chart");
+  if(!state.chart){ svg.style.display="none"; return; } else svg.style.display="block";
+  const W=1000,H=260,pad=38;
+  const pts = list.filter(e=>(e.tokensPerSecond>0)&&(e.qualityPerKilojoule>0));
+  const xs = pts.map(e=>e.tokensPerSecond), ys = pts.map(e=>e.qualityPerKilojoule);
+  const xMax = Math.max(1,...xs), yMax = Math.max(1,...ys);
+  const X = v => pad + (v/xMax)*(W-pad*1.5);
+  const Y = v => (H-pad) - (v/yMax)*(H-pad*1.7);
+  let s = "";
+  // axes
+  s += `<line class="ax" x1="${pad}" y1="${H-pad}" x2="${W-8}" y2="${H-pad}"/>`;
+  s += `<line class="ax" x1="${pad}" y1="8" x2="${pad}" y2="${H-pad}"/>`;
+  s += `<text class="axlbl" x="${W-8}" y="${H-pad+16}" text-anchor="end">tok/s →</text>`;
+  s += `<text class="axlbl" x="${pad-4}" y="16" text-anchor="start">Q/kJ ↑</text>`;
+  pts.forEach(e=>{
+    const col = e.runtime==="MLX" ? "#1ad9c9" : "#3f8cff";
+    s += `<circle class="dot" cx="${X(e.tokensPerSecond).toFixed(1)}" cy="${Y(e.qualityPerKilojoule).toFixed(1)}" r="4.5" `+
+      `fill="${col}" fill-opacity="0.85"><title>${esc(e.model)} (${esc(e.runtime)}) · ${esc(e.chip)}\n`+
+      `${(e.tokensPerSecond||0).toFixed(1)} tok/s · ${(e.qualityPerKilojoule||0).toFixed(1)} Q/kJ</title></circle>`;
+  });
+  if(!pts.length) s += `<text class="axlbl" x="${W/2}" y="${H/2}" text-anchor="middle">No plottable entries yet</text>`;
+  svg.innerHTML = s;
+}
+
+// wire controls
+$("q").addEventListener("input", e=>{ state.q=e.target.value; render(); });
+$("sort").addEventListener("change", e=>{ sortKey=e.target.value; sortDir=(sortKey==="energyJoules")?1:-1; render(); });
+$("clean").addEventListener("change", e=>{ state.clean=e.target.checked; render(); });
+$("verified").addEventListener("change", e=>{ state.verified=e.target.checked; render(); });
+$("showChart").addEventListener("change", e=>{ state.chart=e.target.checked; render(); });
+["runtime","tier"].forEach(id=>{
+  $(id).addEventListener("click", e=>{
+    if(e.target.tagName!=="BUTTON") return;
+    state[id]=e.target.dataset.v;
+    [...$(id).children].forEach(b=>b.classList.toggle("on", b===e.target));
+    render();
+  });
+});
+
+fetch("leaderboard.json").then(r=>r.json()).then(d=>{ data=Array.isArray(d)?d:[]; render(); })
+  .catch(()=>{ $("empty").hidden=false; $("empty").textContent="Could not load leaderboard.json"; render(); });
 </script>
 </body>
 </html>
