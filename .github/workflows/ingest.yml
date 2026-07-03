@@ -1,0 +1,60 @@
+name: Ingest leaderboard submission
+
+# Auto-appends valid submissions from issues to leaderboard.json.
+# Re-runs on edits (idempotent by entry id). Review/verify after the fact.
+
+on:
+  issues:
+    types: [opened, edited, reopened]
+
+# Serialize so concurrent submissions don't clobber leaderboard.json.
+concurrency:
+  group: leaderboard-ingest
+  cancel-in-progress: false
+
+permissions:
+  contents: write   # commit leaderboard.json
+  issues: write     # comment + label
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Parse + append submission
+        id: ingest
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
+        run: node scripts/ingest.mjs
+
+      - name: Commit dataset
+        if: steps.ingest.outputs.result == 'added'
+        run: |
+          git config user.name "a.eye-bot"
+          git config user.email "actions@github.com"
+          git add leaderboard.json
+          git commit -m "leaderboard: add submission from #${{ github.event.issue.number }}"
+          git push
+
+      - name: Comment success + label
+        if: steps.ingest.outputs.result == 'added'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" --body "✅ ${{ steps.ingest.outputs.message }}"
+          gh issue edit "${{ github.event.issue.number }}" --add-label "ingested,unverified" || true
+
+      - name: Comment rejection
+        if: steps.ingest.outputs.result == 'invalid'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" --body "⚠️ ${{ steps.ingest.outputs.message }}"
+          gh issue edit "${{ github.event.issue.number }}" --add-label "invalid-submission" || true
