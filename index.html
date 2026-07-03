@@ -17,16 +17,25 @@
   input,select{background:var(--surface);border:1px solid var(--stroke);color:var(--text);
     border-radius:10px;padding:9px 12px;font-size:13px}
   input{flex:1;min-width:180px}
+  label.chk{color:var(--dim);font-size:12px;display:inline-flex;align-items:center;gap:4px}
+  label.chk input{width:auto;min-width:0}
   table{width:100%;border-collapse:collapse}
   th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--stroke)}
   th{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.06em;
     cursor:pointer;user-select:none}
   td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  td.mid,th.mid{text-align:center}
   .rank{color:var(--dim)} .top .rank{color:var(--teal);font-weight:700}
   .rt{font-size:10px;font-weight:700} .rt.MLX{color:var(--teal)} .rt.GGUF{color:var(--blue)}
   .q{font-weight:600} .qkj{color:var(--teal);font-weight:600}
   .badge{font-size:10px;color:var(--warn);border:1px solid var(--warn);border-radius:6px;padding:0 5px;margin-left:6px}
+  .tier{font-size:10px;font-weight:700;border-radius:6px;padding:0 5px;margin-left:6px;text-transform:uppercase;letter-spacing:.03em}
+  .tier.official{color:var(--teal);border:1px solid var(--teal)}
+  .tier.community{color:var(--dim);border:1px solid var(--stroke)}
+  .cond{font-weight:700;cursor:default}
+  .cond.clean{color:var(--teal)} .cond.warn{color:var(--warn)} .cond.unknown{color:var(--dim)}
   .empty{color:var(--dim);padding:40px 0;text-align:center}
+  .note{color:var(--dim);font-size:11px;margin-top:14px}
 </style>
 </head>
 <body>
@@ -40,16 +49,25 @@
       <option value="quality">Quality</option>
       <option value="tokensPerSecond">Speed (tok/s)</option>
     </select>
-    <label style="color:var(--dim);font-size:12px"><input type="checkbox" id="verified" style="width:auto"> verified only</label>
+    <label class="chk"><input type="checkbox" id="official"> official only</label>
+    <label class="chk"><input type="checkbox" id="clean"> clean runs only</label>
+    <label class="chk"><input type="checkbox" id="verified"> verified only</label>
   </div>
   <table>
     <thead><tr>
       <th class="num">#</th><th>Model</th><th>Chip</th>
+      <th class="mid" title="Run conditions">Cond.</th>
       <th class="num">Quality</th><th class="num">tok/s</th><th class="num">Q/kJ</th>
     </tr></thead>
     <tbody id="rows"></tbody>
   </table>
   <div id="empty" class="empty" hidden>No results yet.</div>
+  <p class="note">
+    <b>Tier</b> — <span style="color:var(--teal)">official</span> = graded by the Claude control judge;
+    <span style="color:var(--dim)">community</span> = graded by the pinned on-device judge.
+    <b>Cond.</b> — ✓ measured under clean conditions; ⚠ possibly influenced by background load,
+    thermal throttling, Low Power Mode, or running on battery (hover for details).
+  </p>
 </div>
 <script>
 let data = [];
@@ -57,12 +75,39 @@ const rowsEl = document.getElementById("rows");
 const emptyEl = document.getElementById("empty");
 const qEl = document.getElementById("q");
 const sortEl = document.getElementById("sort");
+const officialEl = document.getElementById("official");
+const cleanEl = document.getElementById("clean");
 const verifiedEl = document.getElementById("verified");
+
+function esc(s){return String(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+function condTitle(e){
+  const bits=[];
+  if(e.lowPowerMode) bits.push("Low Power Mode");
+  if(e.thermalThrottled) bits.push("thermal throttling");
+  if(typeof e.backgroundCPU==="number" && e.backgroundCPU>=0.15)
+    bits.push("~"+Math.round(e.backgroundCPU*100)+"% other-app CPU");
+  return bits.length ? "Influential factors: "+bits.join(", ") : "Run may be influenced";
+}
+
+function condCell(e){
+  if(e.cleanRun===true) return '<span class="cond clean" title="Measured under clean conditions">✓</span>';
+  if(e.cleanRun===false) return '<span class="cond warn" title="'+esc(condTitle(e))+'">⚠</span>';
+  return '<span class="cond unknown" title="Conditions not reported">–</span>';
+}
+
+function tierChip(e){
+  return e.official===true
+    ? '<span class="tier official">official</span>'
+    : '<span class="tier community">community</span>';
+}
 
 function render(){
   const q = qEl.value.trim().toLowerCase();
   const key = sortEl.value;
   let list = data.filter(e =>
+    (!officialEl.checked || e.official === true) &&
+    (!cleanEl.checked || e.cleanRun === true) &&
     (!verifiedEl.checked || e.verified === true) &&
     (!q || (e.model||"").toLowerCase().includes(q) || (e.chip||"").toLowerCase().includes(q)));
   list.sort((a,b)=>(b[key]||0)-(a[key]||0));
@@ -72,9 +117,10 @@ function render(){
     if(i<3) tr.className = "top";
     tr.innerHTML =
       `<td class="num rank">${i+1}</td>`+
-      `<td>${esc(e.model)} <span class="rt ${e.runtime}">${e.runtime}</span>`+
-        `${e.verified?'':'<span class="badge">unverified</span>'}</td>`+
+      `<td>${esc(e.model)} <span class="rt ${esc(e.runtime)}">${esc(e.runtime)}</span>`+
+        `${tierChip(e)}${e.verified?'':'<span class="badge">unverified</span>'}</td>`+
       `<td>${esc(e.chip)}</td>`+
+      `<td class="mid">${condCell(e)}</td>`+
       `<td class="num q">${e.quality}</td>`+
       `<td class="num">${(e.tokensPerSecond||0).toFixed(1)}</td>`+
       `<td class="num qkj">${(e.qualityPerKilojoule||0).toFixed(1)}</td>`;
@@ -82,8 +128,7 @@ function render(){
   });
   emptyEl.hidden = list.length>0;
 }
-function esc(s){return String(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
-[qEl,sortEl,verifiedEl].forEach(el=>el.addEventListener("input",render));
+[qEl,sortEl,officialEl,cleanEl,verifiedEl].forEach(el=>el.addEventListener("input",render));
 fetch("leaderboard.json").then(r=>r.json()).then(d=>{data=Array.isArray(d)?d:[];render();})
   .catch(()=>{emptyEl.hidden=false;emptyEl.textContent="Could not load leaderboard.json";});
 </script>

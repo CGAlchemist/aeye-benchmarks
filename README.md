@@ -56,9 +56,36 @@ Entries are auto-added as `"verified": false`. To vet one:
   "sourceIssue": 12,
   "submittedBy": "someuser",
   "verified": false,
-  "ingestedAt": "2026-07-02T17:01:00Z"
+  "ingestedAt": "2026-07-02T17:01:00Z",
+
+  "judgeModel": "claude-opus-4-8",
+  "judgeVerified": true,
+  "rubricVersion": "1.0",
+  "cleanRun": false,
+  "backgroundCPU": 0.34,
+  "lowPowerMode": false,
+  "thermalThrottled": true
 }
 ```
+
+### Optional fields
+
+These are additive — older submissions omit them and still ingest fine.
+
+| Field | Meaning |
+|---|---|
+| `judgeModel` | Which judge produced the quality score |
+| `judgeVerified` | Pinned local judge passed hash verification |
+| `rubricVersion` | Grading rubric version |
+| `cleanRun` | No significant influential factors detected during the run |
+| `backgroundCPU` | Peak competing (non-a.EYE) CPU load, `0…1` |
+| `lowPowerMode` | Low Power Mode was on |
+| `thermalThrottled` | Thermal pressure reached Serious during the run |
+
+**Tier** (`official` flag): `true` = graded by the Claude control judge; `false` =
+graded by the pinned on-device judge ("community"). **Conditions** (`cleanRun`):
+the web board shows ✓ for clean runs and ⚠ for possibly-influenced ones, with
+filters for *official only* and *clean runs only*.
 
 ## Privacy
 

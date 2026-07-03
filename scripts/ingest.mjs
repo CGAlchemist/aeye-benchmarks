@@ -41,6 +41,18 @@ function isFiniteNumber(n) {
   return typeof n === "number" && Number.isFinite(n);
 }
 
+// Optional-field coercers — these fields are additive, so a missing/invalid one
+// is simply dropped rather than failing the submission.
+function optBool(v) {
+  return v === true ? true : v === false ? false : undefined;
+}
+function optStr(v, max = 100) {
+  return typeof v === "string" && v.trim().length > 0 && v.length <= max ? v.trim() : undefined;
+}
+function optFraction(v) {
+  return isFiniteNumber(v) && v >= 0 && v <= 1 ? v : undefined;
+}
+
 function validate(e) {
   const errs = [];
   const str = (k, max = 200) =>
@@ -108,6 +120,20 @@ const clean = {
   ingestedAt: new Date().toISOString(),
 };
 
+// Judge provenance + run-conditions ("influential factors") — optional, additive.
+const optional = {
+  judgeModel: optStr(entry.judgeModel, 100),
+  judgeVerified: optBool(entry.judgeVerified),
+  rubricVersion: optStr(entry.rubricVersion, 20),
+  cleanRun: optBool(entry.cleanRun),
+  backgroundCPU: optFraction(entry.backgroundCPU),
+  lowPowerMode: optBool(entry.lowPowerMode),
+  thermalThrottled: optBool(entry.thermalThrottled),
+};
+for (const [k, v] of Object.entries(optional)) {
+  if (v !== undefined) clean[k] = v;
+}
+
 let list = [];
 try {
   list = JSON.parse(readFileSync(DATA, "utf8"));
@@ -121,4 +147,12 @@ if (existing >= 0) list[existing] = clean; // idempotent re-edit of the same sub
 else list.push(clean);
 
 writeFileSync(DATA, JSON.stringify(list, null, 2) + "\n");
-out("added", `Added **${clean.model}** (${clean.runtime}) on ${clean.chip} — quality ${clean.quality}, ${clean.qualityPerKilojoule.toFixed(1)} q/kJ. Marked unverified for review.`);
+
+const tier = clean.official ? "official" : "community";
+const conditionNote =
+  clean.cleanRun === false
+    ? " ⚠️ run may be influenced (load/throttling/battery)"
+    : clean.cleanRun === true
+    ? " ✓ clean run"
+    : "";
+out("added", `Added **${clean.model}** (${clean.runtime}, ${tier}) on ${clean.chip} — quality ${clean.quality}, ${clean.qualityPerKilojoule.toFixed(1)} q/kJ.${conditionNote} Marked unverified for review.`);
