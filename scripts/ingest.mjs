@@ -7,6 +7,15 @@
 // Node 20+ (available on GitHub runners). No dependencies.
 
 import { readFileSync, writeFileSync, appendFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+
+// Stable, non-reversible handle from a GitHub login — the public board never
+// stores real usernames. Same user → same handle (for grouping). The real
+// submitter remains visible to the maintainer via the linked source issue.
+function anonHandle(login) {
+  const h = createHash("sha256").update(String(login || "anon")).digest("hex");
+  return "anon-" + h.slice(0, 6);
+}
 
 const DATA = "leaderboard.json";
 const RUNTIMES = new Set(["GGUF", "MLX"]);
@@ -93,8 +102,8 @@ const clean = {
   date: typeof entry.date === "string" ? entry.date : new Date().toISOString(),
   official: entry.official === true,
   // Ingestion metadata (ignored by the app's decoder):
-  sourceIssue: issue,
-  submittedBy: author,
+  sourceIssue: issue,          // maintainer can trace real submitter via the issue
+  submittedBy: anonHandle(author),
   verified: false,
   ingestedAt: new Date().toISOString(),
 };

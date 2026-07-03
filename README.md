@@ -60,6 +60,16 @@ Entries are auto-added as `"verified": false`. To vet one:
 }
 ```
 
+## Privacy
+
+Each entry contains **hardware specs** (chip name, RAM) and **benchmark scores**
+only — no serial numbers, hostnames, usernames, IPs, file paths, or model
+outputs. The public dataset stores an **anonymized handle** (`anon-xxxxxx`,
+a stable non-reversible hash) instead of the submitter's GitHub username. The
+real submitter is only discoverable by the maintainer via the entry's
+`sourceIssue` (the GitHub issue is public and tied to the submitter's account —
+inherent to issue-based submission).
+
 ## Trust & abuse notes
 
 Submissions are open, so numbers are self-reported. The Action validates
